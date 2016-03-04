@@ -120,6 +120,12 @@
       .row
         .col-12
           .listing-price
+            - if @listing.manufacture_price && @listing.manufacture_price > @listing.price # show manufacture price and savings if it is set and greater than selling price
+              .row
+                %span.listing-manufacture-price-amount
+                  = humanized_money_with_symbol(@listing.manufacture_price).upcase
+                %span.listing-savings-info
+                  = t(".save", percentage: number_to_percentage(((@listing.manufacture_price - @listing.price) * 100 / @listing.manufacture_price).ceil, precision: 0))
             %span.listing-price-amount
               = humanized_money_with_symbol(@listing.price).upcase
             - with_quantity_and_vat_text(@current_community, @listing) do |text|

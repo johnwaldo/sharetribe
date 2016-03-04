@@ -35,6 +35,7 @@
 #  action_button_tr_key            :string(255)
 #  organization_id                 :integer
 #  price_cents                     :integer
+#  manufacture_price_cents         :integer
 #  currency                        :string(255)
 #  quantity                        :string(255)
 #  unit_type                       :string(32)
@@ -86,6 +87,7 @@ class Listing < ActiveRecord::Base
   belongs_to :category
 
   monetize :price_cents, :allow_nil => true, with_model_currency: :currency
+  monetize :manufacture_price_cents, :allow_nil => true, with_model_currency: :currency
   monetize :shipping_price_cents, allow_nil: true, with_model_currency: :currency
   monetize :shipping_price_additional_cents, allow_nil: true, with_model_currency: :currency
 
@@ -115,6 +117,7 @@ class Listing < ActiveRecord::Base
   validates_presence_of :category
   validates_inclusion_of :valid_until, :allow_nil => :true, :in => DateTime.now..DateTime.now + 7.months
   validates_numericality_of :price_cents, :only_integer => true, :greater_than_or_equal_to => 0, :message => "price must be numeric", :allow_nil => true
+  validates_numericality_of :manufacture_price_cents, :only_integer => true, :greater_than_or_equal_to => 0, :message => "manufacture price must be numeric", :allow_nil => true
 
   def self.currently_open(status="open")
     status = "open" if status.blank?

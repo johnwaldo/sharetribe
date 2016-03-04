@@ -1509,7 +1509,9 @@ en:
       location:
         location: Location
       price:
-        price: Price
+        price: "Selling Price"
+        manufacture_price: "Manufacture Price (Optional)"
+        manufacture_price_will_be_utilized: "Manufacture Price (if provided) will be utilized to calculate the percentage of savings that potential buyers will receive if they purchase your item. This increases odds of selling."
         per: per
         per_day: "per day"
         mass: "piece, kg, l, m2, ..."
@@ -1667,6 +1669,7 @@ en:
       price:
         per_quantity_unit: "per %{quantity_unit}"
         per_day: "per day"
+      save: "Save %{percentage}"
       delivery: "Delivery method"
       shipping: "Shipping (+%{price})"
       shipping_no_price: Shipping

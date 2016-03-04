@@ -52,6 +52,11 @@
           = t(".after_service_fee_you_will_get_vat", :sum_with_currency => '<span id="fee_display"></span>').html_safe
         - else
           = t(".after_service_fee_you_will_get", :sum_with_currency => '<span id="fee_display"></span>').html_safe
+    = form.label :manufacture_price, t(".manufacture_price") # show manufacture price field with label and its sub text
+    = form.text_field :manufacture_price, :class => "price-field", :maxlength => "10", :placeholder => "0", :value => (@listing.manufacture_price ? @listing.manufacture_price.to_s: 0)
+    = render partial: "listings/form/currency_selector", locals: {form: form}
+    %small
+      = t(".manufacture_price_will_be_utilized")
 
 - if payment_gateway == :paypal
   = render layout: "layouts/lightbox", locals: { id: "paypal_fee_info_content"} do

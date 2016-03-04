@@ -35,6 +35,17 @@
   margin-right: lines(0.25);
 }
 
+.listing-savings-info,
+.listing-manufacture-price-amount {
+  @include large-type;
+  color: lighten($light-body, 20%);
+}
+
+.listing-manufacture-price-amount {
+  text-decoration: line-through;
+  margin-right: lines(0.25);
+}
+
 .listing-price-quantity {
   vertical-align: top;
   $hugeTypeLineHeight: lines(2);

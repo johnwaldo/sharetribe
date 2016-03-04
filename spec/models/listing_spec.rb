@@ -34,6 +34,7 @@
 #  action_button_tr_key            :string(255)
 #  organization_id                 :integer
 #  price_cents                     :integer
+#  manufacture_price_cents         :integer
 #  currency                        :string(255)
 #  quantity                        :string(255)
 #  unit_type                       :string(32)

@@ -448,7 +448,9 @@ window.ST = window.ST || {};
       errorPlacement: function(error, element) {
         if (element.attr("name") == "listing[valid_until(1i)]") {
           error.appendTo(element.parent());
-        } else if (element.attr("name") == "listing[price]") {
+        } else if (element.attr("name") == "listing[price]") { // error placement for price is set before label for manufacture price
+          error.insertAfter($("label[for='listing_manufacture_price']").prev());
+        } else if (element.attr("name") == "listing[manufacture_price]") {
           error.appendTo(element.parent());
         } else if ($(element).hasClass("custom_field_checkbox")) {
           var container = $(element).closest(".checkbox-group-container");
@@ -468,6 +470,7 @@ window.ST = window.ST || {};
         "listing[title]": {required: true, minlength: 2, maxlength: 60},
         "listing[origin]": {address_validator: true},
         "listing[price]": {required: pr, money: true, minimum_price_required: [minimum_price, subunit_to_unit]},
+        "listing[manufacture_price]": {money: true},
         "listing[shipping_price]": {money: true},
         "listing[shipping_price_additional]": {money: true},
         "listing[valid_until(1i)]": { min_date: true, max_date: true }
