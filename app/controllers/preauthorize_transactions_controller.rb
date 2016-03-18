@@ -276,52 +276,25 @@ class PreauthorizeTransactionsController < ApplicationController
   end
 
   def preauthorize
-    p "*********************** PREAUTHORIZE ******************************"
     quantity = TransactionViewUtils.parse_quantity(params[:quantity])
     vprms = view_params(listing_id: params[:listing_id], quantity: quantity)
-    listing = Listing.find(params[:listing_id])
-    seller = listing.author
-
-    case listing.unit_type
-    when :week
-      start_on = Date.today
-      end_on = Date.today + quantity.weeks
-      duration = quantity
-    when :month
-      start_on = Date.today
-      end_on = Date.today + quantity.months
-      duration = quantity
-    else
-      start_on = TransactionViewUtils.parse_booking_date(params[:start_on])
-      end_on = TransactionViewUtils.parse_booking_date(params[:end_on])
-      duration = DateUtils.duration_days(start_on, end_on)
-    end
-
-    @total_price = vprms[:total_price] * duration
-    #braintree_settings = BraintreePaymentQuery.braintree_settings(@current_community.id)
+    braintree_settings = BraintreePaymentQuery.braintree_settings(@current_community.id)
 
     price_break_down_locals = TransactionViewUtils.price_break_down_locals({
-      booking:  true,
-      start_on: start_on,
-      end_on: end_on,
-      quantity: duration,
-      duration: duration,
+      booking:  false,
+      quantity: quantity,
       listing_price: vprms[:listing][:price],
       localized_unit_type: translate_unit_from_listing(vprms[:listing]),
       localized_selector_label: translate_selector_label_from_listing(vprms[:listing]),
       subtotal: (quantity > 1) ? vprms[:subtotal] : nil,
-      total: vprms[:total_price] * duration
+      total: vprms[:total_price]
     })
 
     render "listing_conversations/preauthorize", locals: {
       preauthorize_form: PreauthorizeMessageForm.new,
-      #braintree_client_side_encryption_key: braintree_settings[:braintree_client_side_encryption_key],
-      #braintree_form: BraintreeForm.new,
+      braintree_form: BraintreeForm.new,
       listing: vprms[:listing],
-      quantity: duration,
-      duration: duration,
-      start_on: start_on,
-      end_on: end_on,      
+      quantity: quantity,
       author: query_person_entity(vprms[:listing][:author_id]),
       action_button_label: vprms[:action_button_label],
       expiration_period: MarketplaceService::Transaction::Entity.authorization_expiration_period(vprms[:payment_type]),
@@ -336,62 +309,27 @@ class PreauthorizeTransactionsController < ApplicationController
       payment_type = MarketplaceService::Community::Query.payment_type(@current_community.id)
       conversation_params = params
 
-      start_on = DateUtils.from_date_select(conversation_params, "start_on")
-      end_on = DateUtils.from_date_select(conversation_params, "end_on")
-
-      preauthorize_form = PreauthorizeBookingForm.new(conversation_params.merge({
-        start_on: start_on,
-        end_on: end_on,
-        listing_id: @listing.id
-      }))
-
-      if @current_community.transaction_agreement_in_use? && conversation_params[:contract_agreed] != "1"
-        return render_error_response(request.xhr?,
-          t("error_messages.transaction_agreement.required_error"),
-          { action: :book, start_on: TransactionViewUtils.stringify_booking_data(start_on), end_on: TransactionViewUtils.stringify_booking_data(end_on) })
-      end
-
-      delivery_method = valid_delivery_method(delivery_method_str: preauthorize_form.delivery_method,
-                                               shipping: @listing.require_shipping_address,
-                                               pickup: @listing.pickup_enabled)
-      if(delivery_method == :errored)
-        return render_error_response(request.xhr?, "Delivery method is invalid.", action: :booked)
-      end
-
-      unless preauthorize_form.valid?
-        return render_error_response(request.xhr?,
-          preauthorize_form.errors.full_messages.join(", "),
-         { action: :book, start_on: start_on, end_on: end_on })
-      end
+      p "******************** PARAMS ************************"
 
       transaction_response = create_preauth_transaction(
-        payment_type: :stripe,
-        stripe_token: params[:stripeToken],
         paypal_paykey: params[:paypal_key],
         community: @current_community,
         listing: @listing,
         user: @current_user,
-        listing_quantity: DateUtils.duration_days(preauthorize_form.start_on, preauthorize_form.end_on),
-        content: preauthorize_form.content,
         use_async: request.xhr?,
-        delivery_method: delivery_method,
         shipping_price: @listing.shipping_price,
-        booking_fields: {
-          start_on: start_on,
-          end_on: end_on
-        })
+      )
 
-      transaction_id = transaction_response[0]["data"][:transaction][:id]
-
+      p "**************** TRANSACTION RESPONSE ******************"
+      p "LISTING ===== #{@listing}"
+      transaction_id = transaction_response.data[:transaction][:id]
       transaction = Transaction.find(transaction_id)
 
-      transaction.update_attributes(deposit_cents: @listing.deposit_cents) if @listing.get_deposit > 0
-        
       #paypal
       paypal_gateway = PaypalGateway.new  
       paypal_return_url = "#{request.base_url}#{person_transaction_path(:person_id => @current_user.id, :id => transaction_id)}?paypal_return=1"
 
-      paypal_express_checkout_token = paypal_gateway.pay(params[:total_price].to_i + @listing.get_deposit_cents, paypal_return_url)
+      paypal_express_checkout_token = paypal_gateway.pay(@listing.price_cents, paypal_return_url)
       
       p "=======PAYPAL EXPRESS CHECKOUT TOKEN ====="
 
@@ -399,7 +337,7 @@ class PreauthorizeTransactionsController < ApplicationController
 
       transaction.update_attributes(payment_gateway: "paypal")
       
-      return redirect_to "https://www.paypal.com/cgi-bin/webscr?cmd=_express-checkout&token=#{paypal_express_checkout_token}"
+      return redirect_to "https://www.sandbox.paypal.com/cgi-bin/webscr?cmd=_express-checkout&token=#{paypal_express_checkout_token}"
   end
 
   private

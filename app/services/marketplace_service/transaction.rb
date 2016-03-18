@@ -357,14 +357,14 @@ module MarketplaceService
       # "private" helpers
 
       def setup_preauthorize_reminder(transaction_id, expire_at)
-        reminder_days_before = 1
+        # reminder_days_before = 1
 
-        reminder_at = expire_at - reminder_days_before.day
-        send_reminder = reminder_at > DateTime.now
+        # reminder_at = expire_at - reminder_days_before.day
+        # send_reminder = reminder_at > DateTime.now
 
-        if send_reminder
-          Delayed::Job.enqueue(TransactionPreauthorizedReminderJob.new(transaction_id), priority: 9, :run_at => reminder_at)
-        end
+        # if send_reminder
+        #   Delayed::Job.enqueue(TransactionPreauthorizedReminderJob.new(transaction_id), priority: 9, :run_at => reminder_at)
+        # end
       end
     end
   end

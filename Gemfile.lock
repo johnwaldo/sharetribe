@@ -83,6 +83,7 @@ GEM
       rake (~> 10.4)
     arel (6.0.3)
     ast (2.2.0)
+    attr_required (1.0.1)
     aws-sdk (2.2.15)
       aws-sdk-resources (= 2.2.15)
     aws-sdk-core (2.2.15)
@@ -323,6 +324,10 @@ GEM
     passenger (5.0.24)
       rack
       rake (>= 0.8.1)
+    paypal-express (0.8.1)
+      activesupport (>= 2.3)
+      attr_required (>= 0.0.5)
+      rest-client
     paypal-sdk-core (0.3.4)
       multi_json (~> 1.0)
       xml-simple
@@ -330,6 +335,10 @@ GEM
       paypal-sdk-core (~> 0.3.0)
     paypal-sdk-permissions (1.96.4)
       paypal-sdk-core (~> 0.3.0)
+    paypal-sdk-rest (1.4.3)
+      multi_json (~> 1.0)
+      uuidtools (~> 2.1)
+      xml-simple
     possibly (0.2.0)
     powerpack (0.1.1)
     premailer (1.8.6)
@@ -481,6 +490,7 @@ GEM
       unf_ext
     unf_ext (0.0.7.2)
     unicode-display_width (0.3.1)
+    uuidtools (2.1.5)
     warden (1.2.6)
       rack (>= 1.0)
     web-console (2.3.0)
@@ -552,8 +562,10 @@ DEPENDENCIES
   omniauth-facebook (~> 3.0.0)
   paperclip (~> 4.2.4)
   passenger (~> 5.0.18)
+  paypal-express
   paypal-sdk-merchant (~> 1.116.0)
   paypal-sdk-permissions (~> 1.96.4)
+  paypal-sdk-rest
   possibly (~> 0.2.0)
   premailer (~> 1.8.2)
   protected_attributes (~> 1.1.3)

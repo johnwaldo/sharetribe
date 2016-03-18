@@ -12,6 +12,7 @@ module ApplicationHelper
       "grid" => "ss-thumbnails",
       "new_listing" => "ss-addfile",
       "search"  => "ss-search",
+      "globelocation" => "ss-globelocation",
       "list" => "ss-list",
       "home" => "ss-home",
       "community" =>"ss-usergroup",
@@ -165,6 +166,7 @@ module ApplicationHelper
       "new_listing" => "icon-plus-sign-alt",
 
       "search"  => "icon-search",
+      "globelocation" => "icon-globe",
       "list" => "icon-reorder",
 
       "home" => "icon-home",
@@ -351,36 +353,16 @@ module ApplicationHelper
 
   def avatar_thumb(size, person, avatar_html_options={})
     return "" if person.nil?
-
-    image_url = person.image.present? ? person.image.url(size) : missing_avatar(size)
-
-    link_to_unless(person.deleted?, image_tag(image_url, avatar_html_options), person)
+    link_to_unless(person.deleted?, image_tag(person.image.url(size), avatar_html_options), person)
   end
 
   def large_avatar_thumb(person, options={})
-    image_url = person.image.present? ? person.image.url(:medium) : missing_avatar(:medium)
-
-    image_tag image_url, { :alt => person.name(@current_community) }.merge(options)
+    image_tag person.image.url(:medium), { :alt => person.name(@current_community) }.merge(options)
   end
 
   def huge_avatar_thumb(person, options={})
     # FIXME! Need a new picture size: :large
-
-    image_url = person.image.present? ? person.image.url(:medium) : missing_avatar(:medium)
-
-    image_tag image_url, { :alt => person.name(@current_community) }.merge(options)
-  end
-
-  def missing_avatar(size = :medium)
-    case size.to_sym
-    when :small
-      image_path("profile_image/small/missing.png")
-    when :thumb
-      image_path("profile_image/thumb/missing.png")
-    else
-      # default to medium size
-      image_path("profile_image/medium/missing.png")
-    end
+    image_tag person.image.url(:medium), { :alt => person.name(@current_community) }.merge(options)
   end
 
   def pageless(total_pages, target_id, url=nil, loader_message='Loading more results')
@@ -389,7 +371,7 @@ module ApplicationHelper
       :totalPages => total_pages,
       :url        => url,
       :loaderMsg  => loader_message,
-      :targetDiv  => target_id # extra parameter for jquery.pageless.js patch
+      :div1       => target_id
     }
 
     content_for :extra_javascript do
@@ -775,7 +757,14 @@ module ApplicationHelper
         :icon_class => icon_class("notification_settings"),
         :path => notifications_person_settings_path(person),
         :name => "notifications"
-      }
+      },
+      {
+         :id => "settings-tab-payments",
+         :text => t("layouts.settings.payments"),
+         :icon_class => icon_class("payment_settings"),
+         :path => payments_person_settings_path(person),
+         :name => "payments"
+      },
     ]
 
     payment_type = MarketplaceService::Community::Query.payment_type(@current_community.id)
@@ -951,6 +940,12 @@ module ApplicationHelper
       js
     else
       content_for :extra_javascript do js end
+    end
+  end
+
+  def get_admin_refund_action(transaction)
+    if not transaction.deposit_cents.nil?
+      transaction.deposit_cents / 100
     end
   end
 end

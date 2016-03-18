@@ -1,7 +1,7 @@
 module TransactionService::Store::Transaction
 
-  TransactionModel = ::Transaction
-  ShippingAddressModel = ::ShippingAddress
+  TransactionModel = ActiveRecord::Transaction
+  ShippingAddressModel = ShippingAddress
 
   NewTransaction = EntityUtils.define_builder(
     [:community_id, :fixnum, :mandatory],
@@ -76,6 +76,8 @@ module TransactionService::Store::Transaction
   def create(opts)
     tx_data = HashUtils.compact(NewTransaction.call(opts))
     tx_model = TransactionModel.new(tx_data.except(:content, :booking_fields))
+    p "****************************************"
+    p tx_model.class  
     build_conversation(tx_model, tx_data)
     build_booking(tx_model, tx_data)
 
@@ -178,6 +180,8 @@ module TransactionService::Store::Transaction
   end
 
   def build_conversation(tx_model, tx_data)
+    p "****************INSIDE BUILD CONVERSATION******************"
+    p tx_model.class
     conversation = tx_model.build_conversation(
       tx_data.slice(:community_id, :listing_id))
 

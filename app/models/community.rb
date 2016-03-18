@@ -524,11 +524,7 @@ class Community < ActiveRecord::Base
   #
   # There is a method `payment_type` is community service. Use that instead.
   def payments_in_use?
-    if MarketplaceService::Community::Query.payment_type(id) == :paypal
-      true
-    else
-      payment_gateway.present? && payment_gateway.configured?
-    end
+    true
   end
 
   # Testimonials can be used only if payments are used and `testimonials_in_use` value

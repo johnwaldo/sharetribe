@@ -35,6 +35,9 @@ Kassi::Application.routes.draw do
   get "/listings/new/:type" => "listings#new", :as => :new_request_without_locale # needed for some emails, where locale part is already set
   get "/change_locale" => "i18n#change_locale", :as => :change_locale
 
+  #PAYPAL
+  post 'paypal/connect' => 'paypal#connect'
+  get 'paypal/connect_callback' => 'paypal#connect_callback'
 
   # Prettier link for admin panel
   namespace :admin do

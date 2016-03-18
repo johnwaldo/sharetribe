@@ -18,7 +18,7 @@ class TransactionsController < ApplicationController
     [:end_on, transform_with: ->(v) { Maybe(v).map { |d| TransactionViewUtils.parse_booking_date(d) }.or_else(nil) } ]
   )
 
-  def new
+   def new
     Result.all(
       ->() {
         fetch_data(params[:listing_id])
@@ -31,24 +31,11 @@ class TransactionsController < ApplicationController
 
       transaction_params = HashUtils.symbolize_keys({listing_id: listing_model.id}.merge(params.slice(:start_on, :end_on, :quantity, :delivery)))
 
-      case [process[:process], gateway, booking]
-      when matches([:none])
-        render_free(listing_model: listing_model, author_model: author_model, community: @current_community, params: transaction_params)
-      when matches([:preauthorize, __, true])
-        redirect_to book_path(transaction_params)
-      when matches([:preauthorize, :paypal])
-        redirect_to initiate_order_path(transaction_params)
-      when matches([:preauthorize, :braintree])
-        redirect_to preauthorize_payment_path(transaction_params)
-      when matches([:postpay])
-        redirect_to post_pay_listing_path(transaction_params)
-      else
-        opts = "listing_id: #{listing_id}, payment_gateway: #{gateway}, payment_process: #{process}, booking: #{booking}"
-        raise ArgumentError.new("Cannot find new transaction path to #{opts}")
-      end
+      redirect_to preauthorize_payment_path(transaction_params)
+
     }.on_error { |error_msg, data|
       flash[:error] = Maybe(data)[:error_tr_key].map { |tr_key| t(tr_key) }.or_else("Could not start a transaction, error message: #{error_msg}")
-      redirect_to(session[:return_to_content] || root)
+      redirect_to (session[:return_to_content] || root)
     }
   end
 
