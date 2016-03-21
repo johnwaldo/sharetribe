@@ -1,7 +1,7 @@
 module TransactionService::Store::Transaction
 
-  TransactionModel = ActiveRecord::Transaction
-  ShippingAddressModel = ShippingAddress
+  TransactionModel = ::Transaction
+  ShippingAddressModel = ::ShippingAddress
 
   NewTransaction = EntityUtils.define_builder(
     [:community_id, :fixnum, :mandatory],

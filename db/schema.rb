@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160318201728) do
+ActiveRecord::Schema.define(version: 20160321201956) do
 
   create_table "auth_tokens", force: :cascade do |t|
     t.string   "token",            limit: 255
@@ -972,22 +972,22 @@ ActiveRecord::Schema.define(version: 20160318201728) do
   add_index "transaction_transitions", ["transaction_id"], name: "index_transaction_transitions_on_conversation_id", using: :btree
 
   create_table "transactions", force: :cascade do |t|
-    t.string   "starter_id",                        limit: 255,                  null: false
-    t.integer  "listing_id",                        limit: 4,                    null: false
+    t.string   "starter_id",                        limit: 255,                    null: false
+    t.integer  "listing_id",                        limit: 4,                      null: false
     t.integer  "conversation_id",                   limit: 4
-    t.integer  "automatic_confirmation_after_days", limit: 4,                    null: false
-    t.integer  "community_id",                      limit: 4,                    null: false
-    t.datetime "created_at",                                                     null: false
-    t.datetime "updated_at",                                                     null: false
-    t.boolean  "starter_skipped_feedback",                      default: false
-    t.boolean  "author_skipped_feedback",                       default: false
+    t.integer  "automatic_confirmation_after_days", limit: 4,                      null: false
+    t.integer  "community_id",                      limit: 4,                      null: false
+    t.datetime "created_at",                                                       null: false
+    t.datetime "updated_at",                                                       null: false
+    t.boolean  "starter_skipped_feedback",                        default: false
+    t.boolean  "author_skipped_feedback",                         default: false
     t.datetime "last_transition_at"
     t.string   "current_state",                     limit: 255
     t.integer  "commission_from_seller",            limit: 4
-    t.integer  "minimum_commission_cents",          limit: 4,   default: 0
+    t.integer  "minimum_commission_cents",          limit: 4,     default: 0
     t.string   "minimum_commission_currency",       limit: 255
-    t.string   "payment_gateway",                   limit: 255, default: "none", null: false
-    t.integer  "listing_quantity",                  limit: 4,   default: 1
+    t.string   "payment_gateway",                   limit: 255,   default: "none", null: false
+    t.integer  "listing_quantity",                  limit: 4,     default: 1
     t.string   "listing_author_id",                 limit: 255
     t.string   "listing_title",                     limit: 255
     t.string   "unit_type",                         limit: 32
@@ -995,10 +995,11 @@ ActiveRecord::Schema.define(version: 20160318201728) do
     t.string   "unit_price_currency",               limit: 8
     t.string   "unit_tr_key",                       limit: 64
     t.string   "unit_selector_tr_key",              limit: 64
-    t.string   "payment_process",                   limit: 31,  default: "none"
-    t.string   "delivery_method",                   limit: 31,  default: "none"
+    t.string   "payment_process",                   limit: 31,    default: "none"
+    t.string   "delivery_method",                   limit: 31,    default: "none"
     t.integer  "shipping_price_cents",              limit: 4
-    t.boolean  "deleted",                                       default: false
+    t.boolean  "deleted",                                         default: false
+    t.text     "paypal_paykey",                     limit: 65535
   end
 
   add_index "transactions", ["community_id", "deleted"], name: "transactions_on_cid_and_deleted", using: :btree

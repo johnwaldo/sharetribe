@@ -1,6 +1,3 @@
-require 'paypal-sdk-rest'
-
-include PayPal::SDK::REST
 include PayPal::SDK::Core::Logging
 
 class PaypalGateway
@@ -12,109 +9,69 @@ class PaypalGateway
       :app_id    => "APP-80W284485P519543T",
       :username  => "jb-us-seller_api1.paypal.com",
       :password  => "WX4WTU3S8MY44S7F",
-      :signature => "AFcWxV21C7fd0v3bYYYRCpSSRl31A7yDhhsPUU2XhtMoZXsWHFxu-RWy" )        
+      :signature => "AFcWxV21C7fd0v3bYYYRCpSSRl31A7yDhhsPUU2XhtMoZXsWHFxu-RWy" )  
+
+      @api = PayPal::SDK::AdaptivePayments.new      
   end
 
-  def pay(amount, return_url)
-    p "**************** INSIDE METHOD PAY *****************"
-    p "PAYPAL GATEWAY AMOUNT =============> #{amount} ======================="
+  def pay(amount, seller_paypal_account, return_url)
+    # Build request object
+    @pay = @api.build_pay({
+      :actionType => "PAY_PRIMARY",
+      :cancelUrl => "https://thesurfshare.com",
+      :currencyCode => "USD",
+      :feesPayer => "PRIMARYRECEIVER",
+      :ipnNotificationUrl => "http://localhost:3000",
+      :receiverList => {
+        :receiver => [
+          {
+            :amount => (amount).to_i,
+            :email => "eltonokada+blackmarket-facilitator@gmail.com", #MARKETPLACE ACCOUNT
+            :primary => true
+          },
+          {
+            :amount => (amount).to_i - ((amount) * 0.1).to_i,
+            :email => seller_paypal_account, #SELLER ACCOUNT
+          }
+        ]
+      },
+      :returnUrl => return_url })
 
-    #SANDBOX
-    PayPal::SDK.configure({
-      :mode => "sandbox", 
-      :username => "eltonokada+blackmarket-facilitator_api1.gmail.com",
-      :password => "P63TMHWVTC5CJPHS", 
-      :signature => "AFcWxV21C7fd0v3bYYYRCpSSRl31Ay0i15qYgrnzxLogdH9zOuYTMQOA"
-    })
+    # Make API call & get response
+    @response = @api.pay(@pay)
 
-    api = PayPal::SDK::Merchant::API.new
-    set_express_checkout = api.build_set_express_checkout({
+    Rails.logger.info("api.pay response")
+    Rails.logger.info(@response.inspect)
 
-    :Version => "104.0",
-    :SetExpressCheckoutRequestDetails => {
-            :ReturnURL => return_url,
-            :CancelURL => return_url,
-            :PaymentDetails =>[{
-              :OrderTotal =>{ :currencyID => "AUD", :value => amount }, :PaymentAction => "Sale"}
-              ]
-            }
-          })
-
-    set_express_checkout_response = api.set_express_checkout(set_express_checkout)
-
-    p "======= CHECKOUT RESPONSE ======= #{set_express_checkout_response}"
-    set_express_checkout_response.token
-
+    # Access response
+    if @response.success? && @response.payment_exec_status != "ERROR"
+      @response.payKey
+    else
+      @response.error[0].message
+    end
   end
 
   #send payment to the seller get the key with the parameter
-  def send_to_seller(payKey)
-    p "******************** EXECUTE PAYMENT ****************"
-    # THIS METHOD WILL TRANSFER THE MONEY FROM THE MARKETPLACE ACCOUNT TO THE SELLER ACCOUNT
-    # SEND IT TO ENV VARIABLES IN CONFIG
+  def execute_payment(payKey)
+    @execute_payment = @api.build_execute_payment({
+      :payKey => payKey
+    })
 
-    set_rest_config
+    # Make API call & get response
+    @execute_payment_response = @api.execute_payment(@execute_payment)
 
-    transaction = Transaction.where("paypal_paykey = ?", payKey).last
-    
-    unless transaction.deposit_cents.nil?
-      amount = transaction.amount - transaction.deposit_cents
+    Rails.logger.info("api.execute_payment response")
+    Rails.logger.info(@execute_payment_response)
+
+    # Access Response
+    if @execute_payment_response.success?
+      @execute_payment_response.paymentExecStatus
+      @execute_payment_response.payErrorList
+      @execute_payment_response.postPaymentDisclosureList
     else
-      amount = transaction.amount
-    end
-    @payout = PayPal::SDK::REST::Payout.new(
-      {
-        :sender_batch_header => {
-          :sender_batch_id => SecureRandom.hex(8),
-          :email_subject => 'You have a Payout!',
-        },
-        :items => [
-          {
-            :recipient_type => 'EMAIL',
-            :amount => {
-              :value => (amount).to_i - ((amount) * 0.1).to_i,
-              :currency => 'AUD'
-            },
-            :note => 'Thanks!',
-            :receiver => transaction.seller.paypal_account
-          }
-        ]
-      }
-    )
-
-    p "*************** PAYOUT ************* #{@payout} *****************"
-    begin
-      @payout_batch = @payout.create
-      Rails.logger.info "Created Payout with [#{@payout_batch.batch_header.payout_batch_id}]"
-      payout_item_id = @payout_batch.items[0].payout_item_id
-      
-      PaypalPayout.create(transaction_id: transaction.id, paypal_payout_id: payout_item_id)
-
-    rescue ResourceNotFound => err
-      Rails.logger.error @payout.error.inspect
+      @execute_payment_response.error
     end
   end
-
-  def cancel_payout
-    #@payout_item_detail= PayoutItem.cancel(@payout_batch.items[0].payout_item_id)
-  end
-
-  #refund the express checkout sale - when the seller rejects the buyer
-  def refund_deposit(transaction_id)
-    p "******************** REFUND DEPOSIT ****************"
-    Paypal.sandbox!
-
-    request = Paypal::Express::Request.new(
-      :username => "eltonokada+blackmarket-facilitator_api1.gmail.com",
-      :password => "P63TMHWVTC5CJPHS", 
-      :signature => "AFcWxV21C7fd0v3bYYYRCpSSRl31Ay0i15qYgrnzxLogdH9zOuYTMQOA"
-    )
-
-    transaction = Transaction.find(transaction_id)
-
-    request.refund! transaction.paypal_transaction_id
-  end
-
 
   def request_permissions
     @api = PayPal::SDK::Permissions::API.new
@@ -158,17 +115,6 @@ class PaypalGateway
       p ("ERROR WHEN GETTING BASIC PERSONAL DATA ======== #{get_access_token_response.error}")
       return false
     end
-  end
-    
-
-  private
-
-  def set_rest_config
-    #sandbox
-    PayPal::SDK::REST.set_config(
-      :mode => "sandbox",
-      :client_id => "AVsZT1jWTICSega1GtOaSgGr7LuJ3IrZ3PW6j8zmxbf9hF4Lt3ZXqA7UWPps5OLb2oelz8uXrxOaSqqH",
-      :client_secret => "EM9kN_k5sEOBbwYuMaqcnAXWmzyjI-Y-ExvjI_l-SOBiPl3Vj5dl1McMVgKUFaJWktgckkOWTgNUJ6UB")
   end
 
 end

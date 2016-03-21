@@ -33,17 +33,16 @@ module TransactionService::Process
     end
 
     def complete_preauthorization(tx:, message:, sender_id:, gateway_adapter:)
-      res = Gateway.unwrap_completion(
-        gateway_adapter.complete_preauthorization(tx: tx)) do
+      paypal_gateway = PaypalGateway.new
+      tx_model = Transaction.find(tx[:id])
 
-        Transition.transition_to(tx[:id], :paid)
-      end
+      paypal_gateway.execute_payment(tx_model.paypal_paykey)
 
-      if res[:success] && message.present?
-        send_message(tx, message, sender_id)
-      end
+      Transition.transition_to(tx[:id], :paid)
 
-      res
+      send_message(tx, message, sender_id)
+
+      Result::Success.new({result: true})
     end
 
     def complete(tx:, message:, sender_id:, gateway_adapter:)

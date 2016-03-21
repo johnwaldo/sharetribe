@@ -83,8 +83,7 @@ gem 'librato-rails', "~> 0.11.1"
 
 gem 'jwt', '~> 1.5.2'
 
-gem 'paypal-sdk-rest'
-gem 'paypal-express'
+gem 'paypal-sdk-adaptivepayments'
 
 # Use Oauth2 from current master, because the newest release
 # uses old JWT version

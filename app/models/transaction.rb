@@ -30,6 +30,7 @@
 #  delivery_method                   :string(31)       default("none")
 #  shipping_price_cents              :integer
 #  deleted                           :boolean          default(FALSE)
+#  paypal_paykey                     :text(65535)
 #
 # Indexes
 #
@@ -62,7 +63,8 @@ class Transaction < ActiveRecord::Base
     :unit_tr_key,
     :unit_selector_tr_key,
     :shipping_price,
-    :delivery_method
+    :delivery_method,
+    :paypal_paykey
   )
 
   attr_accessor :contract_agreed

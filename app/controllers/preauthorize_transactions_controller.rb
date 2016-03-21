@@ -320,24 +320,20 @@ class PreauthorizeTransactionsController < ApplicationController
         shipping_price: @listing.shipping_price,
       )
 
-      p "**************** TRANSACTION RESPONSE ******************"
-      p "LISTING ===== #{@listing}"
       transaction_id = transaction_response.data[:transaction][:id]
       transaction = Transaction.find(transaction_id)
 
       #paypal
-      paypal_gateway = PaypalGateway.new  
+      paypal_gateway = PaypalGateway.new
       paypal_return_url = "#{request.base_url}#{person_transaction_path(:person_id => @current_user.id, :id => transaction_id)}?paypal_return=1"
 
-      paypal_express_checkout_token = paypal_gateway.pay(@listing.price_cents, paypal_return_url)
+      paypal_checkout_token = paypal_gateway.pay(@listing.price, @listing.author.paypal_account, "http://blackmarketgear.lvh.me:3000/en/#{@current_user.username}/transactions/#{transaction_id}")
       
-      p "=======PAYPAL EXPRESS CHECKOUT TOKEN ====="
-
       MarketplaceService::Transaction::Command.transition_to(transaction_id, "initiated")
 
-      transaction.update_attributes(payment_gateway: "paypal")
+      transaction.update_attributes(payment_gateway: "paypal", paypal_paykey: paypal_checkout_token)
       
-      return redirect_to "https://www.sandbox.paypal.com/cgi-bin/webscr?cmd=_express-checkout&token=#{paypal_express_checkout_token}"
+      return redirect_to "https://www.sandbox.paypal.com/cgi-bin/webscr?cmd=_ap-payment&paykey=#{paypal_checkout_token}"
   end
 
   private

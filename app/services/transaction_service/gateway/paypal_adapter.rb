@@ -50,14 +50,9 @@ module TransactionService::Gateway
     end
 
     def complete_preauthorization(tx:)
-      AsyncCompletion.new(
-        paypal_api.payments.get_payment(tx[:community_id], tx[:id])
-        .and_then { |payment|
-          paypal_api.payments.full_capture(
-            tx[:community_id],
-            tx[:id],
-            DataTypes.create_payment_info({ payment_total: payment[:authorization_total] }))
-        })
+      p "TRANSACTION ==== #{tx}"
+      paypal_gateway = PaypalGateway.new
+
     end
 
     def get_payment_details(tx:)
