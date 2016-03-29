@@ -18,7 +18,7 @@ class PaypalGateway
     # Build request object
     @pay = @api.build_pay({
       :actionType => "PAY_PRIMARY",
-      :cancelUrl => "https://thesurfshare.com",
+      :cancelUrl => "http://blackmarketgear.com",
       :currencyCode => "USD",
       :feesPayer => "PRIMARYRECEIVER",
       :ipnNotificationUrl => "http://localhost:3000",
@@ -26,12 +26,12 @@ class PaypalGateway
         :receiver => [
           {
             :amount => (amount).to_i,
-            :email => "eltonokada+blackmarket-facilitator@gmail.com", #MARKETPLACE ACCOUNT
+            :email => seller_paypal_account , #MARKETPLACE ACCOUNT
             :primary => true
           },
           {
             :amount => (amount).to_i - ((amount) * 0.1).to_i,
-            :email => seller_paypal_account, #SELLER ACCOUNT
+            :email => "eltonokada+blackmarket-facilitator@gmail.com", #SELLER ACCOUNT
           }
         ]
       },
@@ -79,7 +79,7 @@ class PaypalGateway
     # Build request object
     @request_permissions = @api.build_request_permissions({
       :scope => ["ACCESS_BASIC_PERSONAL_DATA","ACCESS_ADVANCED_PERSONAL_DATA", "REFUND", "DIRECT_PAYMENT"],
-      :callback => "http://blackmarketgear.lvh.me:3000/paypal/connect_callback" })
+      :callback => "http://blackmarketgear.com/paypal/connect_callback" })
 
     # Make API call & get response
     @response = @api.request_permissions(@request_permissions)
