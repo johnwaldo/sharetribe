@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160321201956) do
+ActiveRecord::Schema.define(version: 20160331212002) do
 
   create_table "auth_tokens", force: :cascade do |t|
     t.string   "token",            limit: 255
@@ -216,6 +216,7 @@ ActiveRecord::Schema.define(version: 20160321201956) do
     t.string   "dv_test_file_name",                          limit: 64
     t.string   "dv_test_file",                               limit: 64
     t.boolean  "deleted"
+    t.integer  "paypal_fee",                                 limit: 4
   end
 
   add_index "communities", ["domain"], name: "index_communities_on_domain", using: :btree

@@ -2,6 +2,8 @@
 class ListingsController < ApplicationController
   class ListingDeleted < StandardError; end
 
+  before_filter :ensure_payment_account, only: :new
+
   # Skip auth token check as current jQuery doesn't provide it automatically
   skip_before_filter :verify_authenticity_token, :only => [:close, :update, :follow, :unfollow]
 
@@ -897,4 +899,12 @@ class ListingsController < ApplicationController
         default: true
       }
   end
+
+  def ensure_payment_account
+    if @current_user.present? and @current_user.paypal_account.blank?
+      flash[:error] = "Please configure your payment to be able to post listings and receive payments"
+      redirect_to show_settings_payment_path(@current_user.id)
+    end
+  end
+
 end
