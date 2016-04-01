@@ -41,6 +41,12 @@ class CommunitiesController < ApplicationController
     end
   end
 
+  def paypal_fee
+    community = Communitites.find(params[:id])
+    community.update_attributes(paypal_fee: params[:paypal_fee])
+    redirect_to :back
+  end
+
   private
 
   def render_form(errors: nil)
