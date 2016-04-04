@@ -2,7 +2,7 @@
 class ListingsController < ApplicationController
   class ListingDeleted < StandardError; end
 
-  before_filter :ensure_payment_account, only: :new
+  include PeopleHelper
 
   # Skip auth token check as current jQuery doesn't provide it automatically
   skip_before_filter :verify_authenticity_token, :only => [:close, :update, :follow, :unfollow]
@@ -30,6 +30,8 @@ class ListingsController < ApplicationController
 
   before_filter :is_authorized_to_post, :only => [ :new, :create ]
 
+  before_filter :ensure_payment_account, only: :new
+
   def index
     @selected_tribe_navi_tab = "home"
 
@@ -51,18 +53,7 @@ class ListingsController < ApplicationController
             per_page: per_page
           }
 
-          raise_errors = Rails.env.development?
-
-          listings =
-            ListingIndexService::API::Api
-            .listings
-            .search(
-              community_id: @current_community.id,
-              search: search,
-              engine: search_engine,
-              raise_errors: raise_errors,
-              includes: includes
-            ).and_then { |res|
+          listings = ListingIndexService::API::Api.listings.search(community_id: @current_community.id, search: search, includes: includes).and_then { |res|
             Result::Success.new(
               ListingIndexViewUtils.to_struct(
               result: res,
@@ -70,7 +61,7 @@ class ListingsController < ApplicationController
               page: search[:page],
               per_page: search[:per_page]
             ))
-            }.data
+          }.data
 
           render :partial => "listings/profile_listings", :locals => {person: @person, limit: per_page, listings: listings}
         else
@@ -88,29 +79,21 @@ class ListingsController < ApplicationController
 
         if params[:share_type].present?
           direction = params[:share_type]
-          params[:listing_shapes] =
-            all_shapes.select { |shape|
+
+          params[:listing_shapes] = {
+            id: all_shapes.select { |shape|
               direction_map[shape[:id]] == direction
             }.map { |shape| shape[:id] }
+          }
         end
-        raise_errors = Rails.env.development?
-
-        search_res = if @current_community.private
-                       Result::Success.new({count: 0, listings: []})
-                     else
-                       ListingIndexService::API::Api
-                         .listings
-                         .search(
-                           community_id: @current_community.id,
-                           search: {
-                             listing_shape_ids: params[:listing_shapes],
-                             page: page,
-                             per_page: per_page
-                           },
-                           engine: search_engine,
-                           raise_errors: raise_errors,
-                           includes: [:listing_images, :author, :location])
-                     end
+        search_res = @current_community.private ? Result::Success.new({count: 0, listings: []}) : ListingIndexService::API::Api.listings.search(
+                     community_id: @current_community.id,
+                     search: {
+                       listing_shapes: params[:listing_shapes],
+                       page: page,
+                       per_page: per_page
+                     },
+                     includes: [:listing_images, :author, :location])
 
         listings = search_res.data[:listings]
 
@@ -149,13 +132,13 @@ class ListingsController < ApplicationController
   def listing_bubble_multiple
     ids = numbers_str_to_array(params[:ids])
 
-    @listings = if @current_user || !@current_community.private?
-      @current_community.listings.where(listings: {id: ids}).order("listings.created_at DESC")
+    if @current_user || !@current_community.private?
+      @listings = @current_community.listings.where(listings: {id: ids}).order("listings.created_at DESC")
     else
-      []
+      @listings = []
     end
 
-    if !@listings.empty?
+    if @listings.size > 0
       render :partial => "homepage/listing_bubble_multiple"
     else
       render :partial => "bubble_listing_not_visible"
@@ -184,10 +167,6 @@ class ListingsController < ApplicationController
 
     delivery_opts = delivery_config(@listing.require_shipping_address, @listing.pickup_enabled, @listing.shipping_price, @listing.shipping_price_additional, @listing.currency)
 
-    received_testimonials = TestimonialViewUtils.received_testimonials_in_community(@listing.author, @current_community)
-    received_positive_testimonials = TestimonialViewUtils.received_positive_testimonials_in_community(@listing.author, @current_community)
-    feedback_positive_percentage = @listing.author.feedback_positive_percentage_in_community(@current_community)
-
     render locals: {
              form_path: form_path,
              payment_gateway: payment_gateway,
@@ -195,10 +174,7 @@ class ListingsController < ApplicationController
              process: process,
              delivery_opts: delivery_opts,
              listing_unit_type: @listing.unit_type,
-             country_code: community_country_code,
-             received_testimonials: received_testimonials,
-             received_positive_testimonials: received_positive_testimonials,
-             feedback_positive_percentage: feedback_positive_percentage
+             country_code: community_country_code
            }
   end
 
@@ -223,11 +199,12 @@ class ListingsController < ApplicationController
 
     @listing = Listing.new
 
-    if !@current_user.location.nil?
+    if (@current_user.location != nil)
       temp = @current_user.location
+      temp.location_type = "origin_loc"
       @listing.build_origin_loc(temp.attributes)
     else
-      @listing.build_origin_loc()
+      @listing.build_origin_loc(:location_type => "origin_loc")
     end
 
     form_content
@@ -236,8 +213,8 @@ class ListingsController < ApplicationController
   def edit_form_content
     return redirect_to action: :edit unless request.xhr?
 
-    unless @listing.origin_loc
-        @listing.build_origin_loc()
+    if !@listing.origin_loc
+        @listing.build_origin_loc(:location_type => "origin_loc")
     end
 
     form_content
@@ -266,7 +243,7 @@ class ListingsController < ApplicationController
         listing_shape_id: shape[:id],
         transaction_process_id: shape[:transaction_process_id],
         shape_name_tr_key: shape[:name_tr_key],
-        action_button_tr_key: shape[:action_button_tr_key]
+        action_button_tr_key: shape[:action_button_tr_key],
     ).merge(unit_to_listing_opts(m_unit)).except(:unit)
 
     @listing = Listing.new(listing_params)
@@ -310,11 +287,11 @@ class ListingsController < ApplicationController
 
   def edit
     @selected_tribe_navi_tab = "home"
-    unless @listing.origin_loc
-        @listing.build_origin_loc()
+    if !@listing.origin_loc
+        @listing.build_origin_loc(:location_type => "origin_loc")
     end
 
-    @custom_field_questions = @listing.category.custom_fields.where(community_id: @current_community.id)
+    @custom_field_questions = @listing.category.custom_fields.find_all_by_community_id(@current_community.id)
     @numeric_field_ids = numeric_field_ids(@custom_field_questions)
 
     shape = select_shape(get_shapes, @listing.listing_shape_id)
@@ -494,6 +471,8 @@ class ListingsController < ApplicationController
         always_show_additional_shipping_price: shape[:units].length == 1 && shape[:units].first[:kind] == :quantity,
         paypal_fees_url: PaypalCountryHelper.fee_link(community_country_code)
       })
+    else
+      nil
     end
   end
 
@@ -561,10 +540,10 @@ class ListingsController < ApplicationController
     category = Category.find_by_id(params["category"])
     category_label = (category.present? ? "(" + localized_category_label(category) + ")" : "")
 
-    listing_type_label = if ["request","offer"].include? params['share_type']
-      t("listings.index.#{params['share_type']+"s"}")
+    if ["request","offer"].include? params['share_type']
+      listing_type_label = t("listings.index.#{params['share_type']+"s"}")
     else
-      t("listings.index.listings")
+      listing_type_label = t("listings.index.listings")
     end
 
     t("listings.index.feed_title",
@@ -624,10 +603,10 @@ class ListingsController < ApplicationController
 
     unless @listing.visible_to?(@current_user, @current_community) || (@current_user && @current_user.has_admin_rights_in?(@current_community))
       if @current_user
-        flash[:error] = if @listing.closed?
-          t("layouts.notifications.listing_closed")
+        if @listing.closed?
+          flash[:error] = t("layouts.notifications.listing_closed")
         else
-          t("layouts.notifications.you_are_not_authorized_to_view_this_content")
+          flash[:error] = t("layouts.notifications.you_are_not_authorized_to_view_this_content")
         end
         redirect_to root and return
       else
@@ -658,9 +637,7 @@ class ListingsController < ApplicationController
       when :dropdown
         option_id = answer_value.to_i
         answer = DropdownFieldValue.new
-        answer.custom_field_option_selections = [CustomFieldOptionSelection.new(:custom_field_value => answer,
-                                                                                :custom_field_option_id => answer_value,
-                                                                                :listing_id => listing_id)]
+        answer.custom_field_option_selections = [CustomFieldOptionSelection.new(:custom_field_value => answer, :custom_field_option_id => answer_value)]
         answer
       when :text
         answer = TextFieldValue.new
@@ -672,9 +649,7 @@ class ListingsController < ApplicationController
         answer
       when :checkbox
         answer = CheckboxFieldValue.new
-        answer.custom_field_option_selections = answer_value.map { |value|
-          CustomFieldOptionSelection.new(:custom_field_value => answer, :custom_field_option_id => value, :listing_id => listing_id)
-        }
+        answer.custom_field_option_selections = answer_value.map { |value| CustomFieldOptionSelection.new(:custom_field_value => answer, :custom_field_option_id => value) }
         answer
       when :date_field
         answer = DateFieldValue.new
@@ -714,7 +689,7 @@ class ListingsController < ApplicationController
   end
 
   def is_answer_value_blank(value)
-    if value.is_a?(Hash)
+    if value.kind_of?(Hash)
       value["(3i)"].blank? || value["(2i)"].blank? || value["(1i)"].blank?  # DateFieldValue check
     else
       value.blank?
@@ -748,7 +723,7 @@ class ListingsController < ApplicationController
       when "shipping_price_additional"
         hash.merge(:shipping_price_additional_cents =>  MoneyUtil.parse_str_to_subunits(v, currency))
       else
-        hash.merge(k.to_sym => v)
+        hash.merge( k.to_sym => v )
       end
     end
   end
@@ -802,36 +777,15 @@ class ListingsController < ApplicationController
     end
   end
 
-  def create_listing_params(params)
-    listing_params = params.except(:delivery_methods).merge(
-      require_shipping_address: Maybe(params[:delivery_methods]).map { |d| d.include?("shipping") }.or_else(false),
-      pickup_enabled: Maybe(params[:delivery_methods]).map { |d| d.include?("pickup") }.or_else(false),
-      price_cents: params[:price_cents],
-      shipping_price_cents: params[:shipping_price_cents],
-      shipping_price_additional_cents: params[:shipping_price_additional_cents],
-      currency: params[:currency]
+  def create_listing_params(listing_params)
+    listing_params.except(:delivery_methods).merge(
+      require_shipping_address: Maybe(listing_params[:delivery_methods]).map { |d| d.include?("shipping") }.or_else(false),
+      pickup_enabled: Maybe(listing_params[:delivery_methods]).map { |d| d.include?("pickup") }.or_else(false),
+      price_cents: listing_params[:price_cents],
+      shipping_price_cents: listing_params[:shipping_price_cents],
+      shipping_price_additional_cents: listing_params[:shipping_price_additional_cents],
+      currency: listing_params[:currency]
     )
-
-    add_location_params(listing_params, params)
-  end
-
-  def add_location_params(listing_params, params)
-    if params[:origin_loc_attributes].nil?
-      listing_params
-    else
-      location_params = params[:origin_loc_attributes].permit(
-        :address,
-        :google_address,
-        :latitude,
-        :longitude
-      ).merge(
-        location_type: :origin_loc
-      )
-
-      listing_params.merge(
-        origin_loc_attributes: location_params
-      )
-    end
   end
 
   def get_transaction_process(community_id:, transaction_process_id:)
@@ -901,10 +855,9 @@ class ListingsController < ApplicationController
   end
 
   def ensure_payment_account
-    if @current_user.present? and @current_user.paypal_account.blank?
-      flash[:error] = "Please configure your payment to be able to post listings and receive payments"
-      redirect_to show_settings_payment_path(@current_user.id)
-    end
+   if @current_user.present? and @current_user.paypal_account.blank?
+     flash[:error] = "Please configure your payment to be able to post listings and receive payments"
+     redirect_to show_settings_payment_path(@current_user.id)
+   end
   end
-
 end
