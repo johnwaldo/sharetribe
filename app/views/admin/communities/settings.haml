@@ -7,10 +7,6 @@
 = render :partial => "admin/left_hand_navigation", :locals => { :links => admin_links_for(@current_community) }
 
 .left-navi-section
-
-  = form_tag("/communities/#{@current_community.id}/paypal_fee") do |f|
-    = text_field_tag(:paypal_fee)
-    = submit_button    
   = form_for @current_community, :url => update_settings_admin_community_path(@current_community), :method => :put do |form|
     %h2= t(".settings")
 
@@ -37,19 +33,6 @@
         .checkbox-container
           = form.check_box :require_verification_to_post_listings
           = form.label :require_verification_to_post_listings, t(".require_verification_to_post_listings"), :class => "settings-checkbox-label"
-
-    - if(location_search_available)
-      .row
-        .col-12
-          %h3= t("admin.communities.settings.search_preferences")
-          .checkbox-container
-            .settings-checkbox-label.label
-            - select_search_type = select_tag 'main_search', options_for_select(main_search_select_options, main_search), class: 'inline-select'
-            = t("admin.communities.settings.default_search_type", select_search_type: select_search_type).html_safe
-          .checkbox-container
-            .settings-checkbox-label.label
-            - select_distance_unit = select_tag 'distance_unit', options_for_select(distance_unit_select_options, distance_unit), class: 'inline-select'
-            = t("admin.communities.settings.select_distance_unit", distance_units_selector: select_distance_unit).html_safe
 
     .row
       .col-12
@@ -92,10 +75,15 @@
         .checkbox-container
           = form.check_box :email_admins_about_new_members
           = form.label :email_admins_about_new_members, t(".email_admins_about_new_members"), :class => "settings-checkbox-label"
+    .row
+      .col-12
+        = form.label "% Fee"
+        = form.text_field :paypal_fee, style: "width: 50px"
 
     .row
       .col-12
         = form.button t(".update_settings")
+
 
   - content_for :extra_javascript do
     :javascript
