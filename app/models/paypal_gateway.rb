@@ -14,14 +14,14 @@ class PaypalGateway
       @api = PayPal::SDK::AdaptivePayments.new      
   end
 
-  def pay(amount, seller_paypal_account, return_url)
+  def pay(amount, seller_paypal_account, return_url, fee)
     # Build request object
     @pay = @api.build_pay({
       :actionType => "PAY_PRIMARY",
       :cancelUrl => "http://blackmarketgear.com",
       :currencyCode => "USD",
       :feesPayer => "PRIMARYRECEIVER",
-      :ipnNotificationUrl => "http://localhost:3000",
+      :ipnNotificationUrl => "http://blackmarketgear.com",
       :receiverList => {
         :receiver => [
           {
@@ -30,7 +30,7 @@ class PaypalGateway
             :primary => true
           },
           {
-            :amount => (amount).to_i - ((amount) * 0.1).to_i,
+            :amount => (amount).to_i - ((amount) * fee),
             :email => "eltonokada+blackmarket-facilitator@gmail.com", #SELLER ACCOUNT
           }
         ]

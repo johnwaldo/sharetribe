@@ -327,7 +327,7 @@ class PreauthorizeTransactionsController < ApplicationController
       paypal_gateway = PaypalGateway.new
       paypal_return_url = "#{request.base_url}#{person_transaction_path(:person_id => @current_user.id, :id => transaction_id)}?paypal_return=1"
 
-      paypal_checkout_token = paypal_gateway.pay(@listing.price, @listing.author.paypal_account, "http://blackmarketgear.com/en/#{@current_user.username}/transactions/#{transaction_id}")
+      paypal_checkout_token = paypal_gateway.pay(@listing.price, @listing.author.paypal_account, "http://blackmarketgear.com/en/#{@current_user.username}/transactions/#{transaction_id}", (@current_community.paypal_fee.to_f / 100).to_f)
       
       MarketplaceService::Transaction::Command.transition_to(transaction_id, "initiated")
 
