@@ -114,6 +114,8 @@ gem 'demoji', "~> 0.0.5"
 gem 'faraday', '~> 0.9.1'
 gem 'faraday_middleware', '~> 0.10.0'
 
+#gem 'daemons'
+
 group :staging, :production do
   gem 'newrelic_rpm', '~> 3.9.1.236'
   gem 'rails_12factor', '~> 0.0.3'
@@ -162,4 +164,12 @@ group :development, :test do
   gem 'pry-rails', '~> 0.3.2'
   gem 'pry-nav', '~> 0.2.3'
   gem 'pry-stack_explorer', '~> 0.4.9.1'
+
+  # Use Capistrano for deployment
+  gem 'capistrano', '~> 3.4.0'
+  gem 'capistrano-passenger'
+  gem 'capistrano-rvm'
+  gem 'capistrano-bundler', '~> 1.1.2'
+  gem 'capistrano-rails', '~> 1.1'
+  gem 'capistrano3-delayed-job', '~> 1.0'
 end
