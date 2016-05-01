@@ -11,6 +11,7 @@ module ListingService::Store::Shape
     [:action_button_tr_key, :string, :mandatory],
     [:transaction_process_id, :fixnum, :mandatory],
     [:shipping_enabled, :bool, :mandatory],
+    [:make_offer_enabled, :bool, :mandatory],
     [:units, :array, default: []], # Mandatory only if price_enabled
     [:sort_priority, :fixnum],
     [:basename, :string, :mandatory]
@@ -25,6 +26,7 @@ module ListingService::Store::Shape
     [:transaction_process_id, :fixnum, :mandatory],
     [:units, :array, :mandatory],
     [:shipping_enabled, :bool, :mandatory],
+    [:make_offer_enabled, :bool, :mandatory],
     [:name, :string, :mandatory],
     [:sort_priority, :fixnum, default: 0],
     [:category_ids, :array]
@@ -37,6 +39,7 @@ module ListingService::Store::Shape
     [:transaction_process_id, :fixnum],
     [:units, :array],
     [:shipping_enabled, :bool],
+    [:make_offer_enabled, :bool],
     [:sort_priority, :fixnum]
   )
 

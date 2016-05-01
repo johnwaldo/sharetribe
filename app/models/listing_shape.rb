@@ -14,6 +14,7 @@
 #  created_at             :datetime         not null
 #  updated_at             :datetime         not null
 #  deleted                :boolean          default(FALSE)
+#  make_offer_enabled     :boolean          default(FALSE)
 #
 # Indexes
 #
@@ -28,6 +29,7 @@ class ListingShape < ActiveRecord::Base
     :transaction_process_id,
     :price_enabled,
     :shipping_enabled,
+    :make_offer_enabled,
     :name,
     :sort_priority,
     :name_tr_key,

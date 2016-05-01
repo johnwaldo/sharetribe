@@ -43,6 +43,10 @@
   .col-12
     = check_box_tag(:price_enabled, "true", shape[:price_enabled], class: "checkbox-row-checkbox js-price-enabled")
     = label_tag(:price_enabled, t("admin.listing_shapes.price_label"), class: "checkbox-row-label js-price-enabled-label")
+.row
+  .col-12
+    = check_box_tag(:make_offer_enabled, "true", shape[:make_offer_enabled], class: "checkbox-row-checkbox js-make-offer-enabled")
+    = label_tag(:make_offer_enabled, t("admin.listing_shapes.make_offer_label"), class: "checkbox-row-label js-make-offer-enabled-label")
 
 - unless uneditable_fields[:online_payments]
   .row

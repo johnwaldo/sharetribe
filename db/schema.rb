@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160303154947) do
+ActiveRecord::Schema.define(version: 20160421153213) do
 
   create_table "auth_tokens", force: :cascade do |t|
     t.string   "token",            limit: 255
@@ -486,6 +486,7 @@ ActiveRecord::Schema.define(version: 20160303154947) do
     t.datetime "created_at",                                         null: false
     t.datetime "updated_at",                                         null: false
     t.boolean  "deleted",                            default: false
+    t.boolean  "make_offer_enabled",                 default: false
   end
 
   add_index "listing_shapes", ["community_id", "deleted", "sort_priority"], name: "multicol_index", using: :btree
